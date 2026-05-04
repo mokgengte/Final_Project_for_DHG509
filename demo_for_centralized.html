@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>中心化行程碼追蹤Demo</title>
+  <style>
+    :root {
+      --bg1: #f4efe6;
+      --bg2: #d8e5f5;
+      --card: #ffffff;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --ok: #1f9d55;
+      --warn: #f59e0b;
+      --danger: #d14343;
+      --primary: #0b5cab;
+      --line: #dbe3ec;
+      --chip: #eef4fb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 20%, #ffffffaa 0 12%, transparent 13%),
+        radial-gradient(circle at 85% 0%, #ffffff88 0 10%, transparent 11%),
+        linear-gradient(140deg, var(--bg1), var(--bg2));
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid #ffffffa8;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px #0f172a14;
+      padding: 16px;
+    }
+
+    .title {
+      font-size: clamp(20px, 2.4vw, 32px);
+      margin: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .controls {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-top: 14px;
+      align-items: end;
+    }
+
+    .guide-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .narration {
+      margin-top: 10px;
+      border: 2px solid #8fb4e3;
+      background: linear-gradient(135deg, #f8fbff, #edf5ff);
+      color: #1e3a8a;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: clamp(16px, 2.1vw, 22px);
+      line-height: 1.45;
+      font-weight: 800;
+      box-shadow: 0 8px 18px #1d4ed826;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    input[type="range"] { width: 100%; }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    button.secondary { background: #334155; }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1fr;
+    }
+
+    .map {
+      position: relative;
+      height: 360px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background:
+        linear-gradient(transparent 95%, #9db3ce55 95%),
+        linear-gradient(90deg, transparent 95%, #9db3ce55 95%),
+        linear-gradient(#f8fbff, #eef5fe);
+      background-size: 48px 48px, 48px 48px, auto;
+    }
+
+    .city {
+      position: absolute;
+      border: 1px dashed #94a3b8;
+      border-radius: 10px;
+      padding: 4px 8px;
+      font-size: 12px;
+      color: #475569;
+      background: #ffffffcc;
+    }
+
+    .station {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #155e75;
+      box-shadow: 0 0 0 6px #155e7522;
+      transform: translate(-50%, -50%);
+    }
+
+    .venue {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      transform: translate(-50%, -50%) rotate(45deg);
+      background: #7c3aed;
+      opacity: 0.8;
+    }
+
+    .phone {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      transform: translate(-50%, -50%);
+      transition: left .72s ease, top .72s ease;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .phone.user { background: #0284c7; }
+    .phone.case { background: #ef4444; }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #334155;
+    }
+
+    .chip {
+      background: var(--chip);
+      border: 1px solid #d8e4f2;
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fcfdff;
+    }
+
+    .status {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      color: #fff;
+      font-weight: 700;
+      min-width: 72px;
+      justify-content: center;
+    }
+
+    .status.green { background: var(--ok); }
+    .status.yellow { background: var(--warn); }
+    .status.red { background: var(--danger); }
+
+    .transition {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      font-size: 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: #f8fbff;
+      color: #64748b;
+      transition: background .25s ease, color .25s ease, border-color .25s ease;
+    }
+
+    .step.active {
+      background: #fff7ed;
+      color: #9a3412;
+      border-color: #fdba74;
+    }
+
+    .step.done {
+      background: #ecfeff;
+      color: #0f766e;
+      border-color: #99f6e4;
+    }
+
+    .flow {
+      display: grid;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .node {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+      background: #fff;
+      position: relative;
+      transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+    }
+
+    .node.active {
+      border-color: #2563eb;
+      transform: translateX(4px);
+      box-shadow: 0 8px 16px #2563eb1f;
+    }
+
+    .arrow {
+      height: 12px;
+      border-left: 2px solid #9ca3af;
+      margin-left: 12px;
+      opacity: 0.8;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 6px;
+      text-align: left;
+    }
+
+    @media (max-width: 980px) {
+      .container { grid-template-columns: 1fr; }
+      .map { height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="card">
+      <h1 class="title">中心化行程碼追蹤Demo</h1>
+      <p class="subtitle">預設會自動導覽「接觸事件命中→平台覆核→綠碼轉紅碼」。一般展示只要按重播，不需要調參數。</p>
+
+      <div id="guideText" class="narration">導覽準備中...</div>
+
+      <input id="hour" type="range" min="0" max="23" step="1" value="1" hidden />
+
+      <div class="controls">
+        <div class="manual-control">
+          <label for="scenarioSelect">情境切換</label>
+          <select id="scenarioSelect">
+            <option value="same_place_scanned">同城同地點（你有掃場所碼）</option>
+            <option value="same_city_diff_place">同城不同地點（無共同到訪）</option>
+            <option value="same_place_no_scan">同城同地點（你未掃場所碼）</option>
+          </select>
+        </div>
+        <div class="manual-control">
+          <label for="manualStep">手動步驟控制: <strong id="stepValue">1/6</strong></label>
+          <input id="manualStep" type="range" min="1" max="6" step="1" value="1" />
+        </div>
+        <div class="manual-control" style="display:flex; gap:8px;">
+          <button id="prevStep">上一步</button>
+          <button id="nextStep">下一步</button>
+        </div>
+        <div class="manual-control" style="display:flex; gap:8px;"><button id="recalc">重置演示</button></div>
+      </div>
+
+      <div class="grid" style="margin-top:14px;">
+        <div class="map" id="map">
+          <div class="city" style="left:7%; top:8%;">A市</div>
+          <div class="city" style="left:39%; top:8%;">B市</div>
+          <div class="city" style="left:71%; top:8%;">C市</div>
+
+          <div class="station" style="left:15%; top:30%;" title="A1 基站"></div>
+          <div class="station" style="left:25%; top:62%;" title="A2 基站"></div>
+
+          <div class="station" style="left:45%; top:36%;" title="B1 基站"></div>
+          <div class="station" style="left:56%; top:60%;" title="B2 基站"></div>
+
+          <div class="station" style="left:75%; top:34%;" title="C1 基站"></div>
+          <div class="station" style="left:84%; top:67%;" title="C2 基站"></div>
+
+          <div class="venue" style="left:48%; top:40%;" title="B市商場場所碼"></div>
+          <div class="venue" style="left:80%; top:62%;" title="C市車站場所碼"></div>
+
+          <div class="phone user" id="userPhone" title="你的手機">你</div>
+          <div class="phone case" id="casePhone" title="確診者手機">診</div>
+        </div>
+
+        <div class="legend">
+          <span class="chip">圓點：基站</span>
+          <span class="chip">菱形：場所碼地點</span>
+          <span class="chip">藍色手機：你</span>
+          <span class="chip">紅色手機：確診者</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="stack">
+      <section class="card panel">
+        <h3 style="margin:0 0 8px;">系統判定結果</h3>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <span>健康碼：</span><span id="status" class="status green">綠碼</span>
+        </div>
+        <div id="riskReason" style="font-size:15px; color:#334155; line-height:1.55; font-weight:700;">目前無時空伴隨。</div>
+        <div class="transition">
+          <span id="s1" class="step">1. 命中接觸事件</span>
+          <span id="s2" class="step">2. 平台風險覆核</span>
+          <span id="s3" class="step">3. 碼色更新輸出</span>
+        </div>
+        <hr style="border:none; border-top:1px solid var(--line); margin:10px 0;" />
+        <div style="font-size:13px;">行程卡到訪城市：<strong id="visited">-</strong></div>
+      </section>
+
+      <section class="card panel">
+        <h3 style="margin:0 0 8px;">中心化數據流</h3>
+        <div class="flow">
+          <div class="node" id="n1">1. 手機基站信令上報（電信層）</div>
+          <div class="arrow"></div>
+          <div class="node" id="n2">2. 三大運營商匯總</div>
+          <div class="arrow"></div>
+          <div class="node" id="n3">3. 工信部/地方平台 ETL 清洗</div>
+          <div class="arrow"></div>
+          <div class="node" id="n4">4. 行程卡與健康碼 API 輸出</div>
+        </div>
+      </section>
+
+      <section class="card panel">
+        <h3 style="margin:0 0 8px;">事件紀錄（當前步驟）</h3>
+        <table>
+          <thead>
+            <tr><th>角色</th><th>所在基站</th><th>場所碼掃描</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>你</td><td id="uStation">-</td><td id="uVenue">-</td></tr>
+            <tr><td>確診者</td><td id="cStation">-</td><td id="cVenue">-</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </aside>
+  </div>
+
+  <script>
+    const stationPos = {
+      A1: { x: 15, y: 30, city: "A市" },
+      A2: { x: 25, y: 62, city: "A市" },
+      B1: { x: 45, y: 36, city: "B市" },
+      B2: { x: 56, y: 60, city: "B市" },
+      C1: { x: 75, y: 34, city: "C市" },
+      C2: { x: 84, y: 67, city: "C市" }
+    };
+
+    const venueName = {
+      V_B_MALL: "B市商場",
+      V_C_STATION: "C市車站",
+      NONE: "-"
+    };
+
+    const baseUserTrace = [
+      { h: 0, s: "A1", v: "NONE" }, { h: 1, s: "A1", v: "NONE" },
+      { h: 2, s: "A1", v: "NONE" }, { h: 3, s: "A1", v: "NONE" },
+      { h: 4, s: "A2", v: "NONE" }, { h: 5, s: "A2", v: "NONE" },
+      { h: 6, s: "B1", v: "NONE" }, { h: 7, s: "B1", v: "V_B_MALL" },
+      { h: 8, s: "B1", v: "NONE" }, { h: 9, s: "B2", v: "NONE" },
+      { h: 10, s: "B2", v: "NONE" }, { h: 11, s: "B2", v: "NONE" },
+      { h: 12, s: "C1", v: "NONE" }, { h: 13, s: "C1", v: "NONE" },
+      { h: 14, s: "C1", v: "NONE" }, { h: 15, s: "C2", v: "V_C_STATION" },
+      { h: 16, s: "C2", v: "NONE" }, { h: 17, s: "C2", v: "NONE" },
+      { h: 18, s: "B1", v: "NONE" }, { h: 19, s: "B1", v: "NONE" },
+      { h: 20, s: "A2", v: "NONE" }, { h: 21, s: "A2", v: "NONE" },
+      { h: 22, s: "A1", v: "NONE" }, { h: 23, s: "A1", v: "NONE" }
+    ];
+
+    const baseCaseTrace = [
+      { h: 0, s: "C1", v: "NONE" }, { h: 1, s: "C1", v: "NONE" },
+      { h: 2, s: "C1", v: "NONE" }, { h: 3, s: "C2", v: "NONE" },
+      { h: 4, s: "C2", v: "V_C_STATION" }, { h: 5, s: "C2", v: "NONE" },
+      { h: 6, s: "B2", v: "NONE" }, { h: 7, s: "B2", v: "NONE" },
+      { h: 8, s: "B1", v: "V_B_MALL" }, { h: 9, s: "B1", v: "NONE" },
+      { h: 10, s: "B1", v: "NONE" }, { h: 11, s: "B1", v: "NONE" },
+      { h: 12, s: "A2", v: "NONE" }, { h: 13, s: "A2", v: "NONE" },
+      { h: 14, s: "A2", v: "NONE" }, { h: 15, s: "A1", v: "NONE" },
+      { h: 16, s: "A1", v: "NONE" }, { h: 17, s: "A1", v: "NONE" },
+      { h: 18, s: "B1", v: "NONE" }, { h: 19, s: "B1", v: "NONE" },
+      { h: 20, s: "C1", v: "NONE" }, { h: 21, s: "C1", v: "NONE" },
+      { h: 22, s: "C2", v: "NONE" }, { h: 23, s: "C2", v: "NONE" }
+    ];
+
+    const hourInput = document.getElementById("hour");
+    const stepValue = document.getElementById("stepValue");
+    const manualStepInput = document.getElementById("manualStep");
+    const scenarioSelect = document.getElementById("scenarioSelect");
+
+    const VISIT_THRESHOLD = 4;
+    const RISK_WINDOW = 8;
+
+    const userPhone = document.getElementById("userPhone");
+    const casePhone = document.getElementById("casePhone");
+
+    const uStation = document.getElementById("uStation");
+    const cStation = document.getElementById("cStation");
+    const uVenue = document.getElementById("uVenue");
+    const cVenue = document.getElementById("cVenue");
+
+    const status = document.getElementById("status");
+    const riskReason = document.getElementById("riskReason");
+    const visited = document.getElementById("visited");
+    const guideText = document.getElementById("guideText");
+    const transSteps = ["s1", "s2", "s3"].map(id => document.getElementById(id));
+
+    const flowNodes = ["n1", "n2", "n3", "n4"].map(id => document.getElementById(id));
+
+    let transitionTimers = [];
+    let currentStepIndex = 0;
+    let activeScenario = "same_place_scanned";
+    let userTrace = [];
+    let caseTrace = [];
+
+    const scenarioStoryboards = {
+      same_place_scanned: [
+        { hour: 1, text: "步驟 1/6：起始階段，兩者位於不同城市，維持綠碼。" },
+        { hour: 4, text: "步驟 2/6：移動到第二個基站，行程資料開始累積。" },
+        { hour: 7, forceLevel: "yellow", forceText: "中風險：跨城與近距活動已命中預警條件。", text: "步驟 3/6：跨城與 B 市活動，行程碼轉為黃碼。" },
+        { hour: 8, forceLevel: "yellow", forceText: "中風險：已進入預警階段，行程碼維持黃色。", text: "步驟 4/6：命中同基站/同場所事件，行程碼維持黃碼。" },
+        { hour: 9, forceLevel: "red", forceText: "高風險：你與確診者在同城同地點且你有掃場所碼，行程碼由黃色轉為紅色。", text: "步驟 5/6：同城同地點且有掃碼，復核後升為紅碼。" },
+        { hour: 10, forceLevel: "red", forceText: "高風險：命中同場所掃碼紀錄，紅碼狀態持續。", text: "步驟 6/6：風險狀態持續，紅碼結果清楚可見。" }
+      ],
+      same_city_diff_place: [
+        { hour: 1, text: "步驟 1/6：起始階段，兩者位於不同城市，維持綠碼。" },
+        { hour: 4, text: "步驟 2/6：移動到第二個基站，行程資料開始累積。" },
+        { hour: 7, forceLevel: "yellow", forceText: "中風險：你與確診者已在同城活動，觸發黃碼預警。", text: "步驟 3/6：同城活動命中，行程碼轉為黃碼。" },
+        { hour: 8, forceLevel: "yellow", forceText: "中風險：雖在同城，但未命中同一場所，維持黃碼。", text: "步驟 4/6：同城不同地點，維持黃碼。" },
+        { hour: 9, forceLevel: "yellow", forceText: "中風險：復核確認無共同場所到訪，維持黃碼追蹤。", text: "步驟 5/6：覆核後仍為黃碼，不升紅碼。" },
+        { hour: 10, forceLevel: "yellow", forceText: "中風險：同城不同地點情境下，碼色持續黃碼。", text: "步驟 6/6：持續追蹤，黃碼結果清楚可見。" }
+      ],
+      same_place_no_scan: [
+        { hour: 1, text: "步驟 1/6：起始階段，兩者位於不同城市，維持綠碼。" },
+        { hour: 4, text: "步驟 2/6：移動到第二個基站，行程資料開始累積。" },
+        { hour: 7, forceLevel: "yellow", forceText: "中風險：你與感染者已在同城活動，行程碼轉為黃碼。", text: "步驟 3/6：同城活動命中，行程碼轉為黃碼。" },
+        { hour: 8, forceLevel: "yellow", forceText: "中風險：雖在同地點，但你未掃場所碼，僅能維持黃碼。", text: "步驟 4/6：同城同地點但你未掃碼，維持黃碼。" },
+        { hour: 9, forceLevel: "yellow", forceText: "中風險：覆核未找到你的場所碼紀錄，因此不升為紅碼。", text: "步驟 5/6：缺少掃碼紀錄，覆核後仍為黃碼。" },
+        { hour: 10, forceLevel: "yellow", forceText: "中風險：你未掃場所碼，系統僅能保持黃碼追蹤。", text: "步驟 6/6：風險持續監測，碼色維持黃碼。" }
+      ]
+    };
+
+    function cloneTrace(trace) {
+      return trace.map(item => ({ ...item }));
+    }
+
+    function setupScenario(scenarioKey) {
+      activeScenario = scenarioKey;
+      userTrace = cloneTrace(baseUserTrace);
+      caseTrace = cloneTrace(baseCaseTrace);
+
+      if (scenarioKey === "same_city_diff_place") {
+        const step7 = userTrace.find(item => item.h === 7);
+        if (step7) step7.v = "NONE";
+
+        const caseStep8 = caseTrace.find(item => item.h === 8);
+        if (caseStep8) {
+          caseStep8.s = "B2";
+          caseStep8.v = "NONE";
+        }
+      }
+
+      if (scenarioKey === "same_place_no_scan") {
+        userTrace.forEach(item => {
+          item.v = "NONE";
+        });
+      }
+    }
+
+    function getStoryboard() {
+      return scenarioStoryboards[activeScenario] || scenarioStoryboards.same_place_scanned;
+    }
+
+    function placePhone(el, stationId) {
+      const p = stationPos[stationId];
+      el.style.left = p.x + "%";
+      el.style.top = p.y + "%";
+    }
+
+    function current(trace, hour) {
+      return trace.find(i => i.h === hour);
+    }
+
+    function calcVisitedCities(stayThreshold) {
+      const totals = { "A市": 0, "B市": 0, "C市": 0 };
+      userTrace.forEach(item => {
+        totals[stationPos[item.s].city] += 1;
+      });
+      return Object.entries(totals)
+        .filter(([, h]) => h >= stayThreshold)
+        .map(([city]) => city);
+    }
+
+    function calculateRisk(windowHours, maxHour = 23) {
+      let hasStationCompanion = false;
+      let hasVenueCompanion = false;
+      let stationNote = "";
+      let venueNote = "";
+
+      for (const u of userTrace) {
+        if (u.h > maxHour) continue;
+        for (const c of caseTrace) {
+          if (c.h > maxHour) continue;
+          const dt = Math.abs(u.h - c.h);
+          if (dt > windowHours) continue;
+
+          if (u.s === c.s) {
+            hasStationCompanion = true;
+            if (!stationNote) stationNote = `你與確診者曾在同基站 ${u.s} 出現`;
+          }
+          if (u.v !== "NONE" && u.v === c.v) {
+            hasVenueCompanion = true;
+            if (!venueNote) venueNote = `你與確診者到過同場所 ${venueName[u.v]}`;
+          }
+        }
+      }
+
+      if (hasVenueCompanion) {
+        return { level: "red", text: `高風險：${venueNote}。場所碼補足了基站精度。` };
+      }
+      if (hasStationCompanion) {
+        return { level: "yellow", text: `中風險：${stationNote}（時空伴隨命中）。` };
+      }
+      return { level: "green", text: "低風險：未命中時空伴隨規則。" };
+    }
+
+    function pulseFlow() {
+      flowNodes.forEach(n => n.classList.remove("active"));
+      flowNodes.forEach((node, idx) => {
+        setTimeout(() => node.classList.add("active"), idx * 220);
+        setTimeout(() => node.classList.remove("active"), idx * 220 + 650);
+      });
+    }
+
+    function clearTransition() {
+      transitionTimers.forEach(t => clearTimeout(t));
+      transitionTimers = [];
+      transSteps.forEach(s => s.classList.remove("active", "done"));
+    }
+
+    function applyRiskDirect(risk) {
+      status.className = `status ${risk.level}`;
+      status.textContent = risk.level === "green" ? "綠碼" : risk.level === "yellow" ? "黃碼" : "紅碼";
+      riskReason.textContent = risk.text;
+    }
+
+    function runCodeTransition(risk) {
+      clearTransition();
+      if (risk.level === "green") {
+        applyRiskDirect(risk);
+        return;
+      }
+
+      transSteps[0].classList.add("done");
+      transSteps[1].classList.add("done");
+      transSteps[2].classList.add("active");
+      riskReason.textContent = "平台完成最終覆核，正在輸出最終碼色。";
+
+      transitionTimers.push(setTimeout(() => {
+        transSteps[2].classList.remove("active");
+        transSteps[2].classList.add("done");
+        applyRiskDirect({ level: "red", text: `行程碼已由黃色轉為紅色：${risk.text}` });
+      }, 420));
+    }
+
+    function setDecisionFlowState(stepIdx) {
+      clearTransition();
+
+      if (stepIdx <= 1) return;
+
+      if (stepIdx === 2) {
+        transSteps[0].classList.add("active");
+        return;
+      }
+
+      if (stepIdx === 3) {
+        transSteps[0].classList.add("done");
+        transSteps[1].classList.add("active");
+        return;
+      }
+
+      if (stepIdx >= 5) {
+        transSteps[0].classList.add("done");
+        transSteps[1].classList.add("done");
+        transSteps[2].classList.add("done");
+      }
+    }
+
+    function render() {
+      const h = Number(hourInput.value);
+
+      const u = current(userTrace, h);
+      const c = current(caseTrace, h);
+
+      placePhone(userPhone, u.s);
+      placePhone(casePhone, c.s);
+
+      uStation.textContent = `${u.s} (${stationPos[u.s].city})`;
+      cStation.textContent = `${c.s} (${stationPos[c.s].city})`;
+      uVenue.textContent = venueName[u.v];
+      cVenue.textContent = venueName[c.v];
+
+      const cities = calcVisitedCities(VISIT_THRESHOLD);
+      visited.textContent = cities.length ? cities.join("、") : "無";
+
+      const risk = calculateRisk(RISK_WINDOW, h);
+      applyRiskDirect(risk);
+    }
+
+    function applyStoryboardStep(stepIndex, animateTransition = true) {
+      const storyboard = getStoryboard();
+      const max = storyboard.length - 1;
+      currentStepIndex = Math.max(0, Math.min(stepIndex, max));
+      const info = storyboard[currentStepIndex];
+
+      manualStepInput.max = String(storyboard.length);
+      manualStepInput.value = String(currentStepIndex + 1);
+      stepValue.textContent = `${currentStepIndex + 1}/${storyboard.length}`;
+
+      hourInput.value = String(info.hour);
+      guideText.textContent = info.text;
+
+      if (info.transition && animateTransition) {
+        const u = current(userTrace, info.hour);
+        const c = current(caseTrace, info.hour);
+        placePhone(userPhone, u.s);
+        placePhone(casePhone, c.s);
+        uStation.textContent = `${u.s} (${stationPos[u.s].city})`;
+        cStation.textContent = `${c.s} (${stationPos[c.s].city})`;
+        uVenue.textContent = venueName[u.v];
+        cVenue.textContent = venueName[c.v];
+        const cities = calcVisitedCities(VISIT_THRESHOLD);
+        visited.textContent = cities.length ? cities.join("、") : "無";
+
+        const risk = calculateRisk(RISK_WINDOW, info.hour);
+        runCodeTransition(risk);
+      } else {
+        render();
+        setDecisionFlowState(currentStepIndex);
+        if (info.forceLevel) {
+          applyRiskDirect({ level: info.forceLevel, text: info.forceText || "中風險：系統預警中。" });
+        }
+      }
+    }
+
+    manualStepInput.addEventListener("input", () => {
+      applyStoryboardStep(Number(manualStepInput.value) - 1, true);
+    });
+    document.getElementById("prevStep").addEventListener("click", () => {
+      applyStoryboardStep(currentStepIndex - 1, true);
+    });
+    document.getElementById("nextStep").addEventListener("click", () => {
+      applyStoryboardStep(currentStepIndex + 1, true);
+    });
+    document.getElementById("recalc").addEventListener("click", () => {
+      clearTransition();
+      applyStoryboardStep(0, false);
+    });
+    scenarioSelect.addEventListener("change", () => {
+      clearTransition();
+      setupScenario(scenarioSelect.value);
+      applyStoryboardStep(0, false);
+    });
+
+    setupScenario(activeScenario);
+    applyStoryboardStep(0, false);
+  </script>
+</body>
+</html>
