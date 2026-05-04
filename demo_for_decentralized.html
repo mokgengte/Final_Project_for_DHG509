@@ -414,10 +414,10 @@
     const scenes = [
       { ticks: 0, upload: false, text: "步驟 1/6：初始狀態，所有資料在本機，接觸者維持綠碼。" },
       { ticks: 2, upload: false, text: "步驟 2/6：裝置交換 TempID，接觸事件寫入本機。" },
-      { ticks: 3, upload: false, forceLevel: "yellow", text: "步驟 3/6：命中接觸事件，接觸者進入黃碼預警。" },
-      { ticks: 4, upload: false, forceLevel: "yellow", text: "步驟 4/6：覆核階段進行中，接觸者維持黃碼。" },
+      { ticks: 3, upload: false, forceLevel: "yellow", text: "步驟 3/6：命中接觸事件，接觸者進入黃碼預警。", textNoUpload: "步驟 3/6：本機已記錄接觸事件，但 A 未上傳，接觸者維持綠碼。" },
+      { ticks: 4, upload: false, forceLevel: "yellow", text: "步驟 4/6：覆核階段進行中，接觸者維持黃碼。", textNoUpload: "步驟 4/6：覆核階段進行中，但 A 未上傳，接觸者維持綠碼。" },
       { ticks: 5, upload: true, forceLevel: "red", text: "步驟 5/6：復核後更新信息，接觸者由黃碼轉為紅碼。", textNoUpload: "步驟 5/6：A 未上傳確診狀態，接觸者維持綠碼。" },
-      { ticks: 6, upload: true, forceLevel: "red", text: "步驟 6/6：接觸者無警告，無法進一步處置。", textNoUpload: "步驟 6/6：仍未上傳，系統無法完成通知，接觸者維持綠碼。" }
+      { ticks: 6, upload: true, forceLevel: "red", text: "步驟 6/6：接觸者被告知風險，進行處置。", textNoUpload: "步驟 6/6：仍未上傳，系統無法完成通知，接觸者維持綠碼。" }
     ];
 
     const logs = {
@@ -652,7 +652,7 @@
       }
 
       setRiskFlowByScene(currentSceneIndex);
-      guideText.textContent = (!allowUpload && scene.upload && scene.textNoUpload) ? scene.textNoUpload : scene.text;
+      guideText.textContent = (!allowUpload && scene.textNoUpload) ? scene.textNoUpload : scene.text;
       guideText.classList.toggle("no-wrap", currentSceneIndex === 4);
     }
 
